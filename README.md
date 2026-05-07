@@ -130,7 +130,7 @@ mise run build
 # Add to ~/.terraformrc to point Terraform at the local binary:
 #   provider_installation {
 #     dev_overrides {
-#       "understory-io/hubspot" = "/abs/path/to/terraform-provider-hubspot"
+#       "understory/hubspot" = "/abs/path/to/terraform-provider-hubspot"
 #     }
 #     direct {}
 #   }
