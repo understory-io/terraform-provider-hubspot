@@ -9,7 +9,8 @@ Registry.
 
 - One resource: `hubspot_property` (CRM properties on any object type).
 - Authentication: HubSpot **private-app access token**, scoped to the
-  developer-project-defined private app under [`hubspot-app/`](./hubspot-app).
+  developer-project-defined private app under
+  [`hubspot-app/`](https://github.com/understory-io/terraform-provider-hubspot/tree/main/hubspot-app).
 - Distribution: signed releases pushed to TFC private registry on every
   `v*` tag. See [Releasing](#releasing).
 
@@ -38,10 +39,11 @@ first so the CLI has a registry token.
 ## Authentication
 
 The private app the provider authenticates as is defined as code under
-[`hubspot-app/`](./hubspot-app) — a HubSpot Developer Project (platform
-version `2026.03`) created with `hs project create`. The required scopes for
-managing CRM property schemas live in
-[`hubspot-app/src/app/app-hsmeta.json`](./hubspot-app/src/app/app-hsmeta.json)
+[`hubspot-app/`](https://github.com/understory-io/terraform-provider-hubspot/tree/main/hubspot-app)
+— a HubSpot Developer Project (platform version `2026.03`) created with
+`hs project create`. The required scopes for managing CRM property schemas
+live in
+[`hubspot-app/src/app/app-hsmeta.json`](https://github.com/understory-io/terraform-provider-hubspot/blob/main/hubspot-app/src/app/app-hsmeta.json)
 so they're reviewable in code rather than clicked into the UI.
 
 Bootstrap once per account:
