@@ -49,3 +49,11 @@ jobs:
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to TFC private registry
+        # Skipped when no GPG key was imported (no signed artifacts to upload).
+        if: steps.import_gpg.outputs.fingerprint != ''
+        env:
+          TFC_TOKEN: ${{ secrets.TFC_TOKEN }}
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+        run: ./scripts/tfc-upload-version.sh

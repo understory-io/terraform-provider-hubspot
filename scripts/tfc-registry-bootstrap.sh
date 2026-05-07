@@ -87,10 +87,11 @@ echo "exported to $OUT_DIR/"
 
 # ----- 3. GitHub secret -----
 echo
-echo "==> setting GitHub secret GPG_PRIVATE_KEY on $GH_REPO ..."
+echo "==> setting GitHub secrets on $GH_REPO ..."
 gh secret set GPG_PRIVATE_KEY -R "$GH_REPO" < "$OUT_DIR/private.asc"
 printf '' | gh secret set GPG_PASSPHRASE -R "$GH_REPO"
-echo "GitHub secrets set."
+printf '%s' "$TFC_TOKEN" | gh secret set TFC_TOKEN -R "$GH_REPO"
+echo "GitHub secrets set: GPG_PRIVATE_KEY, GPG_PASSPHRASE, TFC_TOKEN"
 
 # ----- 4. Print TFC API commands (do NOT auto-execute) -----
 PUBLIC_KEY_JSON_PAYLOAD="$OUT_DIR/tfc-gpg-key.json"
