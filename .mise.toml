@@ -1,0 +1,81 @@
+[tools]
+go = "1.25"
+golangci-lint = "2"
+terraform = "1.9"
+node = "22"
+
+[tasks.test]
+description = "Run unit tests with race detector"
+run = "go test -race ./..."
+
+[tasks."test:acc"]
+description = "Run Terraform acceptance tests (requires HUBSPOT_ACCESS_TOKEN)"
+env = { TF_ACC = "1" }
+run = "go test -race -timeout 30m ./internal/provider/..."
+
+[tasks.vet]
+description = "Run go vet"
+run = "go vet ./..."
+
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run ./..."
+
+[tasks.vuln]
+description = "Run govulncheck"
+run = "go run golang.org/x/vuln/cmd/govulncheck@latest ./..."
+
+[tasks.coverage]
+description = "Run tests with coverage and print a summary"
+run = """
+go test -race -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out | tail -n 1
+"""
+
+[tasks.build]
+description = "Build the provider binary"
+run = "go build -o terraform-provider-hubspot ."
+
+[tasks."docs:check"]
+description = "Verify generated provider docs are up to date"
+run = "go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest validate"
+
+[tasks."docs:gen"]
+description = "Regenerate provider docs from schema and examples"
+run = "go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest generate"
+
+[tasks."hs:install"]
+description = "Install the HubSpot CLI (locked via package-lock.json)"
+dir = "hubspot-app"
+run = "npm ci"
+
+[tasks."hs:validate"]
+description = "Validate the embedded HubSpot project"
+dir = "hubspot-app"
+depends = ["hs:install"]
+# Use `npm run` (not `npx hs`) — there's an unrelated `hs` package on npm that
+# wins via PATH lookup outside this dir. npm scripts always prefer
+# node_modules/.bin, so `npm run` is the safe invocation.
+run = "npm run --silent validate"
+
+[tasks."hs:upload"]
+description = "Upload the HubSpot project to the configured account (requires hs auth)"
+dir = "hubspot-app"
+depends = ["hs:install"]
+run = "npm run --silent upload"
+
+[tasks."hs:dev"]
+description = "Run hs project dev for local iteration on the HubSpot app"
+dir = "hubspot-app"
+depends = ["hs:install"]
+run = "npm run --silent dev"
+
+[tasks."hs:auth"]
+description = "Authenticate the HubSpot CLI against the target account (interactive)"
+dir = "hubspot-app"
+depends = ["hs:install"]
+run = "npm run --silent auth"
+
+[tasks.ci]
+description = "Run all CI checks (no acceptance tests)"
+depends = ["test", "vet", "lint", "vuln", "coverage", "build", "hs:validate"]

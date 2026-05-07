@@ -1,0 +1,7 @@
+coverage.out
+terraform-provider-hubspot
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+dist/

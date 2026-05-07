@@ -1,0 +1,16 @@
+{
+  "name": "terraform-provider-hubspot-app",
+  "version": "0.0.0",
+  "private": true,
+  "description": "HubSpot Developer Project that defines the private app used as the auth surface for terraform-provider-hubspot.",
+  "scripts": {
+    "hs": "hs",
+    "auth": "hs account auth",
+    "validate": "hs project validate",
+    "upload": "hs project upload",
+    "dev": "hs project dev"
+  },
+  "devDependencies": {
+    "@hubspot/cli": "^8.6.0"
+  }
+}

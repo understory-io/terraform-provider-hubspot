@@ -1,0 +1,5 @@
+node_modules/
+hubspot.config.yml
+hubspot.config.yaml
+local.json
+.env

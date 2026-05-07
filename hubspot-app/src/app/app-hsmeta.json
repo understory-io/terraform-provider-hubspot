@@ -1,0 +1,40 @@
+{
+  "uid": "terraform_provider_hubspot_app",
+  "type": "app",
+  "config": {
+    "name": "Terraform provider (Understory)",
+    "description": "Auth surface for terraform-provider-hubspot. Holds the scopes required for managing CRM property schemas and CRM object data via Terraform.",
+    "distribution": "private",
+    "auth": {
+      "type": "static",
+      "requiredScopes": [
+        "oauth",
+        "crm.schemas.contacts.read",
+        "crm.schemas.contacts.write",
+        "crm.schemas.companies.read",
+        "crm.schemas.companies.write",
+        "crm.schemas.deals.read",
+        "crm.schemas.deals.write",
+        "crm.schemas.custom.read",
+        "crm.schemas.custom.write"
+      ],
+      "optionalScopes": [
+        "tickets",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.objects.companies.read",
+        "crm.objects.companies.write",
+        "crm.objects.deals.read",
+        "crm.objects.deals.write",
+        "crm.objects.custom.read",
+        "crm.objects.custom.write"
+      ],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [],
+      "iframe": [],
+      "img": []
+    }
+  }
+}
