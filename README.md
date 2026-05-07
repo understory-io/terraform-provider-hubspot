@@ -1,14 +1,39 @@
 # terraform-provider-hubspot
 
-A small, private Terraform provider for managing HubSpot CRM properties via the
-HubSpot CRM v3 API.
+A small, private Terraform provider for managing HubSpot CRM properties via
+the HubSpot CRM v3 API. Used privately within Understory; published to the
+**TFC private registry** as `understory/hubspot`, not to the public Terraform
+Registry.
 
 ## Status
 
 - One resource: `hubspot_property` (CRM properties on any object type).
-- Authentication: HubSpot **private-app access token**.
-- Used privately within Understory; not published to the public Terraform
-  Registry.
+- Authentication: HubSpot **private-app access token**, scoped to the
+  developer-project-defined private app under [`hubspot-app/`](./hubspot-app).
+- Distribution: signed releases pushed to TFC private registry on every
+  `v*` tag. See [Releasing](#releasing).
+
+## Consuming the provider
+
+```hcl
+terraform {
+  required_providers {
+    hubspot = {
+      source  = "app.terraform.io/understory/hubspot"
+      version = "~> 1.0"
+    }
+  }
+}
+
+provider "hubspot" {
+  access_token = var.hubspot_access_token
+}
+```
+
+The host (`app.terraform.io`) routes Terraform to TFC's private registry
+rather than the public one. Workspaces in the `understory` TFC org pick up
+the provider automatically. For local-only consumers, run `terraform login`
+first so the CLI has a registry token.
 
 ## Authentication
 
@@ -136,12 +161,89 @@ mise run build
 #   }
 ```
 
+This shortcuts the registry; useful when iterating on provider code before
+cutting a tag.
+
 ## Releasing
 
-Releases are managed by [release-please](https://github.com/googleapis/release-please).
-Conventional Commits on `main` (`feat:`, `fix:`, `feat!:` …) accumulate into a
-release PR; merging that PR cuts a tag.
+The release pipeline runs entirely off `main` and tag pushes:
 
-The release workflow currently only manages versions and changelogs; building
-distributable binaries (e.g. via GoReleaser) and signing them for a registry
-isn't wired up yet — add that when/if we publish.
+```
+conventional commit on main
+    │
+    ▼
+release-please opens "chore(main): release X.Y.Z" PR (or updates it)
+    │  merge
+    ▼
+release-please commits the version bump + changelog, creates tag vX.Y.Z
+    │  (tag push triggers next stage)
+    ▼
+goreleaser builds 13 platform zips, signs SHA256SUMS with the org GPG key,
+uploads everything to the GitHub Release
+    │
+    ▼
+scripts/tfc-upload-version.sh registers the version in the TFC private
+registry, uploads SHASUMS + .sig + every platform zip
+    │
+    ▼
+infrastructure-hubspot (and any other consumer) can `terraform init -upgrade`
+to pick up the new version
+```
+
+Tag pushes from release-please's `GITHUB_TOKEN` *don't* trigger the goreleaser
+job (GitHub's recursion guard). For automatic triggering, swap the
+`googleapis/release-please-action` token for a PAT, or just push the tag
+manually:
+
+```sh
+git push origin :refs/tags/vX.Y.Z   # in case the tag exists already
+git push origin refs/tags/vX.Y.Z
+```
+
+### Workflows
+
+| File                                  | Trigger                       | Purpose                                                        |
+| ------------------------------------- | ----------------------------- | -------------------------------------------------------------- |
+| `.github/workflows/ci.yml`            | push to main, PRs to main     | `mise run ci` — tests, vet, lint, vuln, coverage, build        |
+| `.github/workflows/release.yml`       | push to main; push of `v*` tag| release-please job (PR/tag); goreleaser job (build + TFC push) |
+
+The release workflow needs three repo secrets to function:
+
+| Secret             | Source                                                    |
+| ------------------ | --------------------------------------------------------- |
+| `GPG_PRIVATE_KEY`  | ASCII-armored private key matching the TFC org's GPG key  |
+| `GPG_PASSPHRASE`   | Empty when the key has no passphrase (CI is non-interactive) |
+| `TFC_TOKEN`        | TFC user/team token with permission to publish providers  |
+
+All three are set by `scripts/tfc-registry-bootstrap.sh` — see [Bootstrapping the TFC registry](#bootstrapping-the-tfc-registry).
+
+### Bootstrapping the TFC registry
+
+`scripts/tfc-registry-bootstrap.sh` is a one-shot setup. It generates a
+4096-bit RSA GPG key (idempotent — reuses an existing one for the configured
+email), exports the key material to `.tfc-setup/` (git-ignored), sets the
+three GitHub secrets above, and prints two `curl` commands to:
+
+1. upload the public key to the `understory` TFC org's GPG keys, and
+2. register the `understory/hubspot` provider entry in the private registry.
+
+Run the script, then paste the printed `curl` commands. After that the
+release workflow will sign and upload on every tag with no further setup.
+
+To rotate the GPG key, delete `.tfc-setup/` plus the key from the local
+gpg keyring (`gpg --delete-secret-keys <fingerprint>`), then re-run the
+script.
+
+### scripts/tfc-upload-version.sh
+
+The artifact-upload step in the release workflow. Reads goreleaser's `dist/`
+directory after a build, then walks the TFC private registry API:
+
+1. POST a `registry-provider-versions` resource (returns presigned upload
+   URLs for SHASUMS and SHASUMS.sig).
+2. PUT the SHASUMS + signature.
+3. For each platform zip: POST `registry-provider-version-platforms`
+   (returns a presigned URL), then PUT the zip.
+
+Re-runs are safe — it returns 422 from TFC when a version or platform already
+exists and skips that step.
