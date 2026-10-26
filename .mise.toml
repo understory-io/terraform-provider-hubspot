@@ -77,5 +77,8 @@ depends = ["hs:install"]
 run = "npm run --silent auth"
 
 [tasks.ci]
-description = "Run all CI checks (no acceptance tests)"
-depends = ["test", "vet", "lint", "vuln", "coverage", "build", "hs:validate"]
+description = "Run all CI checks (no acceptance tests, no HubSpot auth)"
+# `hs:validate` is excluded because the HubSpot CLI requires an authenticated
+# config file to run, which CI does not have. Run it locally via
+# `mise run hs:validate` after `hs account auth`.
+depends = ["test", "vet", "lint", "vuln", "coverage", "build"]

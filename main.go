@@ -18,7 +18,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/understory-io/hubspot",
+		Address: "registry.terraform.io/understory/hubspot",
 		Debug:   debug,
 	}
 
