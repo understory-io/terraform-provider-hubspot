@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     hubspot = {
-      source = "understory/hubspot"
+      source = "understory-io/hubspot"
     }
   }
 }

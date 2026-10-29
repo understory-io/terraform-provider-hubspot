@@ -42,7 +42,7 @@ checksum:
   algorithm: sha256
 
 # Signing the SHA256SUMS file is required to publish the provider to the
-# Terraform Cloud private registry. The release workflow runs goreleaser with
+# Terraform Registry. The release workflow runs goreleaser with
 # `--skip=sign` when GPG_PRIVATE_KEY is not set, so this stays a no-op until a
 # key is wired up.
 signs:

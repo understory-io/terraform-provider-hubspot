@@ -6,4 +6,3 @@ terraform-provider-hubspot
 .terraform.lock.hcl
 dist/
 
-.tfc-setup/
