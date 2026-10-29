@@ -38,6 +38,8 @@ type propertyResourceModel struct {
 	Description types.String `tfsdk:"description"`
 	Options     types.List   `tfsdk:"options"`
 	Prune       types.Bool   `tfsdk:"prune"`
+
+	NumberDisplayHint types.String `tfsdk:"number_display_hint"`
 }
 
 func optionObjectType() types.ObjectType {
@@ -110,6 +112,15 @@ func (r *propertyResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 						"display_order": schema.Int64Attribute{Optional: true, Computed: true},
 						"hidden":        schema.BoolAttribute{Optional: true, Computed: true},
 					},
+				},
+			},
+			"number_display_hint": schema.StringAttribute{
+				MarkdownDescription: "How HubSpot formats a `number` property in its UI. One of: `unformatted`, `formatted`, `currency`, `percentage`, `duration`, `probability` (a value from 0 to 1 shown as a percentage, so 1 is 100%). If omitted, the property keeps whatever HubSpot has and nothing is sent.",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Validators: []validator.String{
+					stringvalidator.OneOf("unformatted", "formatted", "currency", "percentage", "duration", "probability"),
 				},
 			},
 			"prune": schema.BoolAttribute{
@@ -295,6 +306,9 @@ func planToProperty(ctx context.Context, m propertyResourceModel) (hubspot.Prope
 		GroupName:   m.GroupName.ValueString(),
 		Description: m.Description.ValueString(),
 	}
+	if !m.NumberDisplayHint.IsNull() && !m.NumberDisplayHint.IsUnknown() {
+		p.NumberDisplayHint = m.NumberDisplayHint.ValueString()
+	}
 
 	if !m.Options.IsNull() && !m.Options.IsUnknown() {
 		var opts []optionModel
@@ -321,6 +335,7 @@ func applyAPIToModel(_ context.Context, p *hubspot.Property, m *propertyResource
 	m.Type = types.StringValue(p.Type)
 	m.FieldType = types.StringValue(p.FieldType)
 	m.GroupName = types.StringValue(p.GroupName)
+	m.NumberDisplayHint = nullableString(p.NumberDisplayHint)
 	if p.Description == "" {
 		// Preserve nullability so we don't flip null<->"" between plan & state.
 		if m.Description.IsUnknown() {
