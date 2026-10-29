@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.0](https://github.com/understory-io/terraform-provider-hubspot/compare/v2.0.0...v2.1.0) (2026-10-29)
+
+
+### Features
+
+* number_display_hint on hubspot_property ([#7](https://github.com/understory-io/terraform-provider-hubspot/issues/7)) ([90348b9](https://github.com/understory-io/terraform-provider-hubspot/commit/90348b971ba6a1c3dd87eace1f99cce829971da4))
+
+
+### Bug Fixes
+
+* **ci:** build and upload the release that release-please creates. Its ([90348b9](https://github.com/understory-io/terraform-provider-hubspot/commit/90348b971ba6a1c3dd87eace1f99cce829971da4))
+
 ## [2.0.0](https://github.com/understory-io/terraform-provider-hubspot/compare/v1.0.0...v2.0.0) (2026-08-12)
 
 
