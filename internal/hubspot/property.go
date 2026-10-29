@@ -20,6 +20,7 @@ type Property struct {
 	GroupName   string           `json:"groupName,omitempty"`
 	Description string           `json:"description,omitempty"`
 	Options     []PropertyOption `json:"options,omitempty"`
+	NumberDisplayHint string `json:"numberDisplayHint,omitempty"`
 }
 
 // PropertyOption is one option for an enumeration property.

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"sync"
 	"testing"
 
@@ -101,6 +102,9 @@ func (f *fakeHubSpot) handler() http.Handler {
 			}
 			if patch.Options != nil {
 				existing.Options = patch.Options
+			}
+			if patch.NumberDisplayHint != "" {
+				existing.NumberDisplayHint = patch.NumberDisplayHint
 			}
 			f.properties[key] = existing
 			writeJSON(w, http.StatusOK, existing)
@@ -298,6 +302,89 @@ resource "hubspot_property" "p" {
 				Config:             cfg,
 				ExpectNonEmptyPlan: true, // a plan to recreate is expected after external delete
 				PlanOnly:           true,
+			},
+		},
+	})
+}
+
+func TestAccPropertyResource_NumberDisplayHint(t *testing.T) {
+	t.Parallel()
+
+	fake := newFakeHubSpot()
+	srv := httptest.NewServer(fake.handler())
+	t.Cleanup(srv.Close)
+
+	cfg := func(hint string) string {
+		line := ""
+		if hint != "" {
+			line = fmt.Sprintf("  number_display_hint = %q\n", hint)
+		}
+		return providerConfig(srv) + `
+resource "hubspot_property" "share" {
+  name        = "share"
+  object_type = "deals"
+  type        = "number"
+  label       = "Share"
+  group_name  = "dealinformation"
+` + line + `}`
+	}
+
+	resource.UnitTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: protoFactories(),
+		Steps: []resource.TestStep{
+			{
+				Config: cfg(""),
+				Check:  resource.TestCheckNoResourceAttr("hubspot_property.share", "number_display_hint"),
+			},
+			{
+				Config: cfg("probability"),
+				Check:  resource.TestCheckResourceAttr("hubspot_property.share", "number_display_hint", "probability"),
+			},
+			{
+				PreConfig: func() {
+					fake.mu.Lock()
+					p := fake.properties["deals/share"]
+					p.NumberDisplayHint = "unformatted"
+					fake.properties["deals/share"] = p
+					fake.mu.Unlock()
+				},
+				Config:             cfg("probability"),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
+			},
+			{
+				Config: cfg("probability"),
+				Check:  resource.TestCheckResourceAttr("hubspot_property.share", "number_display_hint", "probability"),
+			},
+		},
+	})
+
+	if got := fake.properties["deals/share"].NumberDisplayHint; got != "probability" {
+		t.Errorf("HubSpot numberDisplayHint = %q, want probability", got)
+	}
+}
+
+func TestAccPropertyResource_NumberDisplayHintRejectsUnknownValue(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(newFakeHubSpot().handler())
+	t.Cleanup(srv.Close)
+
+	resource.UnitTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: protoFactories(),
+		Steps: []resource.TestStep{
+			{
+				Config: providerConfig(srv) + `
+resource "hubspot_property" "share" {
+  name                = "share"
+  object_type         = "deals"
+  type                = "number"
+  label               = "Share"
+  group_name          = "dealinformation"
+  number_display_hint = "percent"
+}`,
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`value must be one of`),
 			},
 		},
 	})
